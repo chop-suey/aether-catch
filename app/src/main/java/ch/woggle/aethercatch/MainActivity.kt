@@ -1,25 +1,28 @@
 package ch.woggle.aethercatch
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import ch.woggle.aethercatch.tinker.ItemFragment
-import ch.woggle.aethercatch.tinker.dummy.DummyContent
-import ch.woggle.aethercatch.ui.networks.NetworkListFragment
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.tabs.TabLayout
+import androidx.viewpager.widget.ViewPager
+import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : ItemFragment.OnListFragmentInteractionListener, AppCompatActivity() {
+class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
-        if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                    .replace(R.id.container, NetworkListFragment.newInstance())
-                    .commitNow()
-        }
-    }
+        val sectionsPagerAdapter =
+            MainPagerAdapter(this, supportFragmentManager)
+        val viewPager: ViewPager = findViewById(R.id.view_pager)
+        viewPager.adapter = sectionsPagerAdapter
+        val tabs: TabLayout = findViewById(R.id.tabs)
+        tabs.setupWithViewPager(viewPager)
+        val fab: FloatingActionButton = findViewById(R.id.fab)
 
-    override fun onListFragmentInteraction(item: DummyContent.DummyItem?) {
-        Log.i("TAG", "item: ${item}")
+        fab.setOnClickListener { view ->
+            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show()
+        }
     }
 }

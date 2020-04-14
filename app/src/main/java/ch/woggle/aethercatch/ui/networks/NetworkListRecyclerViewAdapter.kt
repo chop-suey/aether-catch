@@ -38,7 +38,7 @@ class NetworkListRecyclerViewAdapter() : RecyclerView.Adapter<NetworkListRecycle
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val network = networks[position]
         holder.idView.text = network.ssid
-        holder.contentView.text = network.details
+        holder.contentView.text = network.bssid
 
         with(holder.view) {
             tag = network
