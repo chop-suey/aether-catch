@@ -14,6 +14,8 @@ fun createDefaultNotificationChannelAndGetId(context: Context): String {
         name,
         NotificationManager.IMPORTANCE_DEFAULT
     )
+    notificationChannel.enableVibration(false)
+    notificationChannel.setSound(null, null)
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     notificationManager.createNotificationChannel(notificationChannel)
     return AETHER_CATCH_DEFAULT_NOTIFICATION_CHANNEL_ID
