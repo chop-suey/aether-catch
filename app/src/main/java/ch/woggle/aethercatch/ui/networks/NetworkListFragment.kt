@@ -10,6 +10,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import ch.woggle.aethercatch.AetherCatchApplication
 import ch.woggle.aethercatch.R
 
 class NetworkListFragment : Fragment() {
@@ -48,6 +49,12 @@ class NetworkListFragment : Fragment() {
         if (context is NetworkSelectionListener) {
             networkListItemAdapter.setNetworkSelectionListener(context)
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val application = requireActivity().application as AetherCatchApplication
+        viewModel.loadNetworks(application)
     }
 
     override fun onDetach() {

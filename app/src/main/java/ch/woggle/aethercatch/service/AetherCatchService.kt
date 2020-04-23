@@ -10,6 +10,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
 import android.util.Log
+import ch.woggle.aethercatch.AetherCatchApplication
 import ch.woggle.aethercatch.MainActivity
 import ch.woggle.aethercatch.R
 import ch.woggle.aethercatch.model.Network
@@ -54,9 +55,12 @@ class AetherCatchService : Service() {
     }
 
     private fun captureNetworks() {
-        Log.i(TAG, "capture networks")
+        Log.i(TAG, "Capture networks")
         val networks = getWifiManager().scanResults.map { Network.fromScanResult(it) }
-        Log.i(TAG, "Found ${networks.size} networks: ${networks.joinToString()}")
+        Log.i(TAG, "Found ${networks.size} networks")
+        (application as AetherCatchApplication).database
+            .getNetworkDao()
+            .insertAll(networks)
     }
 
     private fun createServiceNotification(): Notification {

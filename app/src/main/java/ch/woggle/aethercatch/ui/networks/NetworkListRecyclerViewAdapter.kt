@@ -9,7 +9,8 @@ import ch.woggle.aethercatch.R
 import ch.woggle.aethercatch.model.Network
 import kotlinx.android.synthetic.main.network_list_fragment_item.view.*
 
-class NetworkListRecyclerViewAdapter() : RecyclerView.Adapter<NetworkListRecyclerViewAdapter.ViewHolder>() {
+class NetworkListRecyclerViewAdapter() :
+    RecyclerView.Adapter<NetworkListRecyclerViewAdapter.ViewHolder>() {
     private val networks = mutableListOf<Network>()
 
     private var networkSelectionListener: NetworkSelectionListener? = null
@@ -21,6 +22,7 @@ class NetworkListRecyclerViewAdapter() : RecyclerView.Adapter<NetworkListRecycle
     fun setNetworks(networks: List<Network>) {
         this.networks.clear()
         this.networks.addAll(networks)
+        notifyDataSetChanged()
     }
 
     fun setNetworkSelectionListener(networkSelectionListener: NetworkSelectionListener?) {
