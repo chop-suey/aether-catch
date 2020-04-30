@@ -7,4 +7,5 @@
     <string name="stop_capturing">Stop capturing</string>
     <string name="network_list_tab_title">Networks</string>
     <string name="capture_configuration_tab_title">Capture</string>
+    <string name="capture_report_indicator">Last capture on %1$tc yielded %2$d new networks</string>
 </resources>

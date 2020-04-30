@@ -13,13 +13,21 @@ import android.util.Log
 import ch.woggle.aethercatch.AetherCatchApplication
 import ch.woggle.aethercatch.MainActivity
 import ch.woggle.aethercatch.R
+import ch.woggle.aethercatch.dao.CaptureReportDao
+import ch.woggle.aethercatch.dao.NetworkDao
+import ch.woggle.aethercatch.model.CaptureReport
 import ch.woggle.aethercatch.model.Network
 import ch.woggle.aethercatch.util.createDefaultNotificationChannelAndGetId
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 const val TAG = "AetherCatchService"
 
 class AetherCatchService : Service() {
     private lateinit var captureHandler: Handler
+
+    private lateinit var networkDao: NetworkDao
+    private lateinit var captureReportDao: CaptureReportDao
 
     private companion object {
         const val SERVICE_FOREGROUND_NOTIFICIATION_ID = 4711
@@ -32,6 +40,9 @@ class AetherCatchService : Service() {
         val handlerThread = HandlerThread(SERVICE_CAPTURE_THREAD_NAME)
         handlerThread.start()
         captureHandler = Handler(handlerThread.looper)
+        val database = (application as AetherCatchApplication).database
+        networkDao = database.getNetworkDao()
+        captureReportDao = database.getCaptureReportDao()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -56,11 +67,17 @@ class AetherCatchService : Service() {
 
     private fun captureNetworks() {
         Log.i(TAG, "Capture networks")
-        val networks = getWifiManager().scanResults.map { Network.fromScanResult(it) }
-        Log.i(TAG, "Found ${networks.size} networks")
-        (application as AetherCatchApplication).database
-            .getNetworkDao()
-            .insertAll(networks)
+        GlobalScope.launch {
+            val networks = getWifiManager().scanResults.map { Network.fromScanResult(it) }
+            val rowIds = networkDao.insertAll(networks)
+            createCaptureReport(rowIds)
+        }
+    }
+
+    private suspend fun createCaptureReport(networkRowIds: List<Long>) {
+        val count = networkRowIds.filter { it != -1L }.size
+        Log.i(TAG, "Captured $count new networks")
+        captureReportDao.insert(CaptureReport.forNetworkCount(count))
     }
 
     private fun createServiceNotification(): Notification {

@@ -18,4 +18,11 @@
         android:layout_height="wrap_content"
         android:text="@string/stop_capturing" />
 
+    <TextView
+        android:id="@+id/report_text"
+        android:layout_margin="10dp"
+        android:textAlignment="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
 </LinearLayout>
