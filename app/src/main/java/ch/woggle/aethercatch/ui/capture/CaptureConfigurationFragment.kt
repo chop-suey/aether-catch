@@ -11,7 +11,6 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import ch.woggle.aethercatch.AetherCatchApplication
 import ch.woggle.aethercatch.R
 import ch.woggle.aethercatch.model.CaptureReport
 
@@ -43,7 +42,6 @@ class CaptureConfigurationFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         val viewModel = ViewModelProvider(this).get(CaptureConfigurationViewModel::class.java)
-        viewModel.init(requireActivity().application as AetherCatchApplication)
         startButton.setOnClickListener { viewModel.startCaptureService(requireContext()) }
         stopButton.setOnClickListener { viewModel.stopCaptureService(requireContext()) }
         viewModel.getLatestReport().observe(viewLifecycleOwner, Observer { setLatestReport(it) })
@@ -78,7 +76,10 @@ class CaptureConfigurationFragment : Fragment() {
     }
 
     private fun setLatestReport(report: CaptureReport) {
-        reportText.text = getString(R.string.capture_report_indicator, report.getDate(), report.networkCount)
+        if (report.networkCount > 0) {
+            reportText.text =
+                getString(R.string.capture_report_indicator, report.getDate(), report.networkCount)
+        }
     }
 
     private fun setButtonsEnabled(enabled: Boolean) {

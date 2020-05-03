@@ -1,12 +1,10 @@
 package ch.woggle.aethercatch.ui.capture
 
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import ch.woggle.aethercatch.AetherCatchApplication
 import ch.woggle.aethercatch.model.CaptureReport
 import ch.woggle.aethercatch.service.AetherCatchService
@@ -16,10 +14,14 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
-const val TAG = "CaptureConfigurationViewModel"
+private const val TAG = "CaptureConfigurationViewModel"
 
-class CaptureConfigurationViewModel : ViewModel() {
-    private val reportMutableLiveData = MutableLiveData<CaptureReport>(CaptureReport.EMPTY)
+class CaptureConfigurationViewModel(application: Application) : AndroidViewModel(application) {
+    private val reportMutableLiveData: MutableLiveData<CaptureReport> by lazy {
+        MutableLiveData(CaptureReport.EMPTY).also {
+            initReportLoading()
+        }
+    }
 
     fun getLatestReport(): LiveData<CaptureReport> = reportMutableLiveData
 
@@ -35,10 +37,10 @@ class CaptureConfigurationViewModel : ViewModel() {
         return Intent(context, AetherCatchService::class.java)
     }
 
-    fun init(application: AetherCatchApplication) {
+    private fun initReportLoading() {
         viewModelScope.launch(Dispatchers.IO) {
-            val reportDao = application.database.getCaptureReportDao()
-            hookupReportLiveData(reportDao.getLatest())
+            val reportDao = getApplication<AetherCatchApplication>().database.getCaptureReportDao()
+            hookupReportLiveData(reportDao.getLatestSuccessfull())
         }
     }
 
