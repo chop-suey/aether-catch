@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface NetworkDao {
     @Query("SELECT * FROM networks")
-    suspend fun getAll(): Flow<List<Network>>
+    fun getAll(): Flow<List<Network>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(networks: List<Network>): List<Long>
