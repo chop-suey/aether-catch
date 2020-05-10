@@ -6,8 +6,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import ch.woggle.aethercatch.R
@@ -20,7 +20,6 @@ class NetworkListFragment : Fragment() {
 
     private val networkListItemAdapter = NetworkListRecyclerViewAdapter()
 
-    private lateinit var viewModel: NetworkListViewModel
     private lateinit var networkListView: RecyclerView
 
     override fun onCreateView(
@@ -41,7 +40,7 @@ class NetworkListFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel = ViewModelProvider(this).get(NetworkListViewModel::class.java)
+        val viewModel: NetworkListViewModel by viewModels()
         viewModel.getNetworks()
             .observe(viewLifecycleOwner, Observer { networkListItemAdapter.setNetworks(it) })
     }

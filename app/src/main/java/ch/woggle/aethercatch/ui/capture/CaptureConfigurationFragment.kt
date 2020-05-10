@@ -9,8 +9,8 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import ch.woggle.aethercatch.R
 import ch.woggle.aethercatch.model.CaptureReport
 
@@ -41,7 +41,7 @@ class CaptureConfigurationFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        val viewModel = ViewModelProvider(this).get(CaptureConfigurationViewModel::class.java)
+        val viewModel: CaptureConfigurationViewModel by viewModels()
         startButton.setOnClickListener { viewModel.startCaptureService(requireContext()) }
         stopButton.setOnClickListener { viewModel.stopCaptureService(requireContext()) }
         viewModel.getLatestReport().observe(viewLifecycleOwner, Observer { setLatestReport(it) })
