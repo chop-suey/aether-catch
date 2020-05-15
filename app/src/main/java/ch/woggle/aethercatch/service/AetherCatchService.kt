@@ -1,6 +1,7 @@
 package ch.woggle.aethercatch.service
 
 import android.app.Notification
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
@@ -18,6 +19,7 @@ import ch.woggle.aethercatch.dao.NetworkDao
 import ch.woggle.aethercatch.model.CaptureReport
 import ch.woggle.aethercatch.model.Network
 import ch.woggle.aethercatch.util.createDefaultNotificationChannelAndGetId
+import ch.woggle.aethercatch.util.isLocationEnabled
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -28,6 +30,8 @@ class AetherCatchService : Service() {
 
     private lateinit var networkDao: NetworkDao
     private lateinit var captureReportDao: CaptureReportDao
+
+    private var isLocationEnabled = false
 
     private companion object {
         const val SERVICE_FOREGROUND_NOTIFICIATION_ID = 4711
@@ -46,6 +50,7 @@ class AetherCatchService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        isLocationEnabled = isLocationEnabled(this)
         startForeground(SERVICE_FOREGROUND_NOTIFICIATION_ID, createServiceNotification())
         captureHandler.post { runCaptureInterval() }
         return super.onStartCommand(intent, flags, startId)
@@ -61,8 +66,18 @@ class AetherCatchService : Service() {
     }
 
     private fun runCaptureInterval() {
+        if (isLocationEnabled(this) != isLocationEnabled) {
+            isLocationEnabled = !isLocationEnabled
+            updateNotification()
+        }
         captureNetworks()
         captureHandler.postDelayed({ runCaptureInterval() }, SERVICE_CAPTURE_INTERVAL_MILLIS)
+    }
+
+    private fun updateNotification() {
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(SERVICE_FOREGROUND_NOTIFICIATION_ID, createServiceNotification())
     }
 
     private fun captureNetworks() {
@@ -84,10 +99,26 @@ class AetherCatchService : Service() {
         val notificationChannelId = createDefaultNotificationChannelAndGetId(this)
         return Notification.Builder(this, notificationChannelId)
             .setContentTitle(getText(R.string.service_notification_title))
-            .setContentText(getText(R.string.service_notification_text))
+            .setContentText(getNotificationText(isLocationEnabled))
             .setContentIntent(createContentIntent())
-            .setSmallIcon(R.drawable.ic_pacman)
+            .setSmallIcon(getNotificationIcon(isLocationEnabled))
             .build()
+    }
+
+    private fun getNotificationText(isLocationEnabled: Boolean): CharSequence {
+        return if (isLocationEnabled) {
+            getText(R.string.service_notification_text)
+        } else {
+            getText(R.string.service_notification_text_location_disabled)
+        }
+    }
+
+    private fun getNotificationIcon(isLocationEnabled: Boolean): Int {
+        return if (isLocationEnabled) {
+            R.drawable.ic_pacman
+        } else {
+            R.drawable.ic_confused
+        }
     }
 
     private fun createContentIntent(): PendingIntent {

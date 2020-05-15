@@ -3,9 +3,13 @@
     <string name="default_notification_channel_name">AetherCatch Notifications</string>
     <string name="service_notification_title">AetherCatchService</string>
     <string name="service_notification_text">Capturing of wifi ssids in progress</string>
+    <string name="service_notification_text_location_disabled">Not capturings ssids. Location is not enabled.</string>
     <string name="start_capturing">Start capturing</string>
     <string name="stop_capturing">Stop capturing</string>
     <string name="network_list_tab_title">Networks</string>
     <string name="capture_configuration_tab_title">Capture</string>
     <string name="capture_report_indicator">Last capture on %1$tc yielded %2$d new networks</string>
+
+    <string name="please_enable_location">Location is not enabled. Please enable location to capture networks.</string>
+    <string name="please_enable_location_ok">Okay</string>
 </resources>

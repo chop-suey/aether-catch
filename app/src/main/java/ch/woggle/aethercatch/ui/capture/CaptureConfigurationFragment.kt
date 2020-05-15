@@ -1,6 +1,7 @@
 package ch.woggle.aethercatch.ui.capture
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,6 +14,8 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import ch.woggle.aethercatch.R
 import ch.woggle.aethercatch.model.CaptureReport
+import ch.woggle.aethercatch.util.hasFineLocationPermission
+import ch.woggle.aethercatch.util.isLocationEnabled
 
 
 class CaptureConfigurationFragment : Fragment() {
@@ -49,10 +52,11 @@ class CaptureConfigurationFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-
-        // TODO location must be enabled
-
-        if (hasFineLocationPermission()) {
+        val activity = requireActivity()
+        if (hasFineLocationPermission(activity)) {
+            if (!isLocationEnabled(activity)) {
+                askToEnableLocation()
+            }
             setButtonsEnabled(true)
         } else {
             setButtonsEnabled(false)
@@ -87,7 +91,11 @@ class CaptureConfigurationFragment : Fragment() {
         stopButton.isEnabled = enabled
     }
 
-    private fun hasFineLocationPermission() = requireActivity()
-        .checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-
+    private fun askToEnableLocation() {
+        AlertDialog.Builder(context)
+            .setCancelable(false)
+            .setMessage(R.string.please_enable_location)
+            .setPositiveButton(R.string.please_enable_location_ok) { dialog, _ -> dialog.cancel() }
+            .show()
+    }
 }
