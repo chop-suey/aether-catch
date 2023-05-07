@@ -13,7 +13,7 @@ interface CaptureReportDao {
     fun getLatest(): Flow<CaptureReport?>
 
     @Query("SELECT * FROM reports WHERE networkCount > 0 ORDER BY timestamp DESC LIMIT 1")
-    fun getLatestSuccessfull(): Flow<CaptureReport?>
+    fun getLatestSuccessful(): Flow<CaptureReport?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(report: CaptureReport)

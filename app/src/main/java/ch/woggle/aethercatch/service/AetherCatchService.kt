@@ -34,7 +34,7 @@ class AetherCatchService : Service() {
     private var isLocationEnabled = false
 
     private companion object {
-        const val SERVICE_FOREGROUND_NOTIFICIATION_ID = 4711
+        const val SERVICE_FOREGROUND_NOTIFICATION_ID = 4711
         const val SERVICE_CAPTURE_THREAD_NAME = "AetherCatchCaptureThread"
         const val SERVICE_CAPTURE_INTERVAL_MILLIS = 30 * 1000L
     }
@@ -51,7 +51,7 @@ class AetherCatchService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         isLocationEnabled = isLocationEnabled(this)
-        startForeground(SERVICE_FOREGROUND_NOTIFICIATION_ID, createServiceNotification())
+        startForeground(SERVICE_FOREGROUND_NOTIFICATION_ID, createServiceNotification())
         captureHandler.post { runCaptureInterval() }
         return super.onStartCommand(intent, flags, startId)
     }
@@ -77,7 +77,7 @@ class AetherCatchService : Service() {
     private fun updateNotification() {
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(SERVICE_FOREGROUND_NOTIFICIATION_ID, createServiceNotification())
+        notificationManager.notify(SERVICE_FOREGROUND_NOTIFICATION_ID, createServiceNotification())
     }
 
     private fun captureNetworks() {
@@ -123,7 +123,7 @@ class AetherCatchService : Service() {
 
     private fun createContentIntent(): PendingIntent {
         val startActivityIntent = Intent(this, MainActivity::class.java)
-        return PendingIntent.getActivity(this, 0, startActivityIntent, 0)
+        return PendingIntent.getActivity(this, 0, startActivityIntent, PendingIntent.FLAG_IMMUTABLE)
     }
 
     private fun getWifiManager(): WifiManager {

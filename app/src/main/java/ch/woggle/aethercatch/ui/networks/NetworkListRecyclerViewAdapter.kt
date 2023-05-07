@@ -7,9 +7,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import ch.woggle.aethercatch.R
 import ch.woggle.aethercatch.model.Network
-import kotlinx.android.synthetic.main.network_list_fragment_item.view.*
 
-class NetworkListRecyclerViewAdapter() :
+class NetworkListRecyclerViewAdapter :
     RecyclerView.Adapter<NetworkListRecyclerViewAdapter.ViewHolder>() {
     private val networks = mutableListOf<Network>()
 
@@ -49,7 +48,7 @@ class NetworkListRecyclerViewAdapter() :
     }
 
     inner class ViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
-        val idView: TextView = view.item_number
-        val contentView: TextView = view.content
+        val idView: TextView = view.findViewById(R.id.item_number)
+        val contentView: TextView = view.findViewById(R.id.content)
     }
 }

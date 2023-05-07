@@ -40,7 +40,7 @@ class CaptureConfigurationViewModel(application: Application) : AndroidViewModel
     private fun initReportLoading() {
         viewModelScope.launch(Dispatchers.IO) {
             val reportDao = getApplication<AetherCatchApplication>().database.getCaptureReportDao()
-            hookupReportLiveData(reportDao.getLatestSuccessfull())
+            hookupReportLiveData(reportDao.getLatestSuccessful())
         }
     }
 
