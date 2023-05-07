@@ -28,7 +28,7 @@ class MainPagerAdapter(private val context: Context, fm: FragmentManager) :
         }
     }
 
-    override fun getPageTitle(position: Int): CharSequence? {
+    override fun getPageTitle(position: Int): CharSequence {
         return when (position) {
             POSITION_NETWORKS -> context.resources.getString(R.string.network_list_tab_title)
             POSITION_CAPTURE_CONFIGURATION -> context.resources.getString(R.string.capture_configuration_tab_title)

@@ -10,6 +10,10 @@
     <string name="capture_configuration_tab_title">Capture</string>
     <string name="capture_report_indicator">Last capture on %1$tc yielded %2$d new networks</string>
 
+    <string name="export">Export…</string>
+    <string name="export_success">Networks exported</string>
+    <string name="export_failed">Network export failed</string>
+
     <string name="please_enable_location">Location is not enabled. Please enable location to capture networks.</string>
     <string name="please_enable_location_ok">Okay</string>
 </resources>

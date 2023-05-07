@@ -8,15 +8,19 @@ import androidx.lifecycle.*
 import ch.woggle.aethercatch.AetherCatchApplication
 import ch.woggle.aethercatch.model.CaptureReport
 import ch.woggle.aethercatch.service.AetherCatchService
+import ch.woggle.aethercatch.util.exportToFile
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 private const val TAG = "CaptureConfigurationViewModel"
 
 class CaptureConfigurationViewModel(application: Application) : AndroidViewModel(application) {
+    private val database = getApplication<AetherCatchApplication>().database
+
+    private val mutableExportSuccess = MutableSharedFlow<Boolean>(replay = 0)
+    val exportSuccess = mutableExportSuccess.asSharedFlow()
+
     private val reportMutableLiveData: MutableLiveData<CaptureReport> by lazy {
         MutableLiveData(CaptureReport.EMPTY).also {
             initReportLoading()
@@ -33,13 +37,27 @@ class CaptureConfigurationViewModel(application: Application) : AndroidViewModel
         context.stopService(getCaptureServiceIntent(context))
     }
 
+    fun export() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val networksDao = database.getNetworkDao()
+            networksDao.getAll().take(1).collect {
+                try {
+                    exportToFile(getApplication(), it)
+                    mutableExportSuccess.emit(true)
+                } catch (exception: Exception) {
+                    mutableExportSuccess.emit(false)
+                }
+            }
+        }
+    }
+
     private fun getCaptureServiceIntent(context: Context): Intent {
         return Intent(context, AetherCatchService::class.java)
     }
 
     private fun initReportLoading() {
         viewModelScope.launch(Dispatchers.IO) {
-            val reportDao = getApplication<AetherCatchApplication>().database.getCaptureReportDao()
+            val reportDao = database.getCaptureReportDao()
             hookupReportLiveData(reportDao.getLatestSuccessful())
         }
     }

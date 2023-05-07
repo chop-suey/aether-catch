@@ -9,13 +9,16 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
 import ch.woggle.aethercatch.R
 import ch.woggle.aethercatch.model.CaptureReport
 import ch.woggle.aethercatch.util.hasFineLocationPermission
 import ch.woggle.aethercatch.util.isLocationEnabled
+import kotlinx.coroutines.launch
 
 
 class CaptureConfigurationFragment : Fragment() {
@@ -29,6 +32,7 @@ class CaptureConfigurationFragment : Fragment() {
 
     private lateinit var startButton: Button
     private lateinit var stopButton: Button
+    private lateinit var exportButton: Button
     private lateinit var reportText: TextView
 
     override fun onCreateView(
@@ -38,6 +42,7 @@ class CaptureConfigurationFragment : Fragment() {
         val view = inflater.inflate(R.layout.capture_configuration_fragment, container, false)
         startButton = view.findViewById(R.id.button_start_capturing)
         stopButton = view.findViewById(R.id.button_stop_capturing)
+        exportButton = view.findViewById(R.id.button_export)
         reportText = view.findViewById(R.id.report_text)
         return view
     }
@@ -47,7 +52,17 @@ class CaptureConfigurationFragment : Fragment() {
         val viewModel: CaptureConfigurationViewModel by viewModels()
         startButton.setOnClickListener { viewModel.startCaptureService(requireContext()) }
         stopButton.setOnClickListener { viewModel.stopCaptureService(requireContext()) }
+        exportButton.setOnClickListener { viewModel.export() }
         viewModel.getLatestReport().observe(viewLifecycleOwner, Observer { setLatestReport(it) })
+        lifecycleScope.launch {
+            viewModel.exportSuccess.collect {
+                val textId = when (it) {
+                    true -> R.string.export_success
+                    else -> R.string.export_failed
+                }
+                Toast.makeText(requireContext(), textId, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onResume() {
