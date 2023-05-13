@@ -2,58 +2,66 @@ package ch.woggle.aethercatch.ui.capture
 
 import android.Manifest
 import android.app.AlertDialog
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material.Button
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Observer
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import ch.woggle.aethercatch.R
-import ch.woggle.aethercatch.model.CaptureReport
 import ch.woggle.aethercatch.util.hasFineLocationPermission
 import ch.woggle.aethercatch.util.isLocationEnabled
+import com.google.accompanist.themeadapter.appcompat.AppCompatTheme
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 
 class CaptureConfigurationFragment : Fragment() {
 
     companion object {
-        const val PERMISSION_REQUEST_CODE = 1234
-
         fun newInstance() =
             CaptureConfigurationFragment()
     }
 
-    private lateinit var startButton: Button
-    private lateinit var stopButton: Button
-    private lateinit var exportButton: Button
-    private lateinit var reportText: TextView
+    private val hasLocationPermission = MutableStateFlow(false)
+    private val requestLocationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        hasLocationPermission.tryEmit(it)
+    }
+
+    private val viewModel: CaptureConfigurationViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        val view = inflater.inflate(R.layout.capture_configuration_fragment, container, false)
-        startButton = view.findViewById(R.id.button_start_capturing)
-        stopButton = view.findViewById(R.id.button_stop_capturing)
-        exportButton = view.findViewById(R.id.button_export)
-        reportText = view.findViewById(R.id.report_text)
-        return view
+    ): View {
+        return inflater.inflate(R.layout.capture_configuration_fragment, container, false).apply {
+            findViewById<ComposeView>(R.id.compose_view).setContent {
+                AppCompatTheme {
+                    val hasLocationPermissionState = hasLocationPermission.collectAsState()
+                    Column {
+                        StartCapturingButton(hasLocationPermissionState)
+                        StopCapturingButton(hasLocationPermissionState)
+                        LatestReportText()
+                        ExportButton()
+                    }
+                }
+            }
+        }
     }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-        val viewModel: CaptureConfigurationViewModel by viewModels()
-        startButton.setOnClickListener { viewModel.startCaptureService(requireContext()) }
-        stopButton.setOnClickListener { viewModel.stopCaptureService(requireContext()) }
-        exportButton.setOnClickListener { viewModel.export() }
-        viewModel.getLatestReport().observe(viewLifecycleOwner, Observer { setLatestReport(it) })
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         lifecycleScope.launch {
             viewModel.exportSuccess.collect {
                 val textId = when (it) {
@@ -63,47 +71,63 @@ class CaptureConfigurationFragment : Fragment() {
                 Toast.makeText(requireContext(), textId, Toast.LENGTH_SHORT).show()
             }
         }
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.CREATED) {
+                checkLocationPermission()
+            }
+        }
     }
 
-    override fun onResume() {
-        super.onResume()
+    private fun checkLocationPermission() {
         val activity = requireActivity()
         if (hasFineLocationPermission(activity)) {
             if (!isLocationEnabled(activity)) {
                 askToEnableLocation()
             }
-            setButtonsEnabled(true)
+            hasLocationPermission.tryEmit(true)
         } else {
-            setButtonsEnabled(false)
-            requestPermissions(
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                PERMISSION_REQUEST_CODE
+            requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
+
+    /**
+     * TODO:
+     *  - nice styling
+     *  - constraint layout
+     *  - counts...
+     */
+
+    @Composable
+    private fun StartCapturingButton(enabledState: State<Boolean>) {
+        Button(enabled = enabledState.value, onClick = { viewModel.startCaptureService(requireContext()) }) {
+            Text(stringResource(R.string.start_capturing))
+        }
+    }
+    
+    @Composable
+    private fun StopCapturingButton(enabledState: State<Boolean>) {
+        Button(enabled = enabledState.value, onClick = { viewModel.stopCaptureService(requireContext()) }) {
+            Text(stringResource(R.string.stop_capturing))
+        }
+    }
+
+    @Composable
+    private fun ExportButton() {
+        Button(onClick = { viewModel.export() }) {
+            Text(stringResource(R.string.export))
+        }
+    }
+
+    @Composable
+    private fun LatestReportText() {
+        val latestReport = viewModel.latestSuccessfulReport.collectAsState().value
+        Text(
+            stringResource(
+                R.string.capture_report_indicator,
+                latestReport.getDate(),
+                latestReport.networkCount
             )
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            val index = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
-            setButtonsEnabled(index >= 0 && grantResults[index] == PackageManager.PERMISSION_GRANTED)
-        }
-    }
-
-    private fun setLatestReport(report: CaptureReport) {
-        if (report.networkCount > 0) {
-            reportText.text =
-                getString(R.string.capture_report_indicator, report.getDate(), report.networkCount)
-        }
-    }
-
-    private fun setButtonsEnabled(enabled: Boolean) {
-        startButton.isEnabled = enabled
-        stopButton.isEnabled = enabled
+        )
     }
 
     private fun askToEnableLocation() {

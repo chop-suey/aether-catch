@@ -21,13 +21,18 @@ class CaptureConfigurationViewModel(application: Application) : AndroidViewModel
     private val mutableExportSuccess = MutableSharedFlow<Boolean>(replay = 0)
     val exportSuccess = mutableExportSuccess.asSharedFlow()
 
-    private val reportMutableLiveData: MutableLiveData<CaptureReport> by lazy {
-        MutableLiveData(CaptureReport.EMPTY).also {
-            initReportLoading()
+    val latestSuccessfulReport = MutableStateFlow(CaptureReport.EMPTY).also { flow ->
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                database.getCaptureReportDao()
+                    .getLatestSuccessful()
+                    .filter { it != null }
+                    .collect { flow.emit(it!!) }
+            } catch (e: Throwable) {
+                Log.w(TAG, "Error in capture report", e)
+            }
         }
-    }
-
-    fun getLatestReport(): LiveData<CaptureReport> = reportMutableLiveData
+    }.asStateFlow()
 
     fun startCaptureService(context: Context) {
         context.startForegroundService(getCaptureServiceIntent(context))
@@ -53,22 +58,5 @@ class CaptureConfigurationViewModel(application: Application) : AndroidViewModel
 
     private fun getCaptureServiceIntent(context: Context): Intent {
         return Intent(context, AetherCatchService::class.java)
-    }
-
-    private fun initReportLoading() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val reportDao = database.getCaptureReportDao()
-            hookupReportLiveData(reportDao.getLatestSuccessful())
-        }
-    }
-
-    private suspend fun hookupReportLiveData(reportFlow: Flow<CaptureReport?>) {
-        try {
-            reportFlow
-                .filter { it != null }
-                .collect { reportMutableLiveData.postValue(it) }
-        } catch (e: Throwable) {
-            Log.i(TAG, "Error in capture report", e)
-        }
     }
 }
