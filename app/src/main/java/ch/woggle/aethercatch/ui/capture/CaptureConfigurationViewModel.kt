@@ -21,6 +21,9 @@ class CaptureConfigurationViewModel(application: Application) : AndroidViewModel
     private val mutableExportSuccess = MutableSharedFlow<Boolean>(replay = 0)
     val exportSuccess = mutableExportSuccess.asSharedFlow()
 
+    val ssids = database.getNetworkDao().getSsidCount()
+    val distinctSsids = database.getNetworkDao().getDistinctSsidCount()
+
     val latestSuccessfulReport = MutableStateFlow(CaptureReport.EMPTY).also { flow ->
         viewModelScope.launch(Dispatchers.IO) {
             try {

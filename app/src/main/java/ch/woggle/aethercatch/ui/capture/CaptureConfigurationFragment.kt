@@ -53,6 +53,7 @@ class CaptureConfigurationFragment : Fragment() {
                         StartCapturingButton(hasLocationPermissionState)
                         StopCapturingButton(hasLocationPermissionState)
                         LatestReportText()
+                        SsidStatistics()
                         ExportButton()
                     }
                 }
@@ -92,9 +93,7 @@ class CaptureConfigurationFragment : Fragment() {
 
     /**
      * TODO:
-     *  - nice styling
-     *  - constraint layout
-     *  - counts...
+     *  - nice styling / constraint layout
      */
 
     @Composable
@@ -128,6 +127,16 @@ class CaptureConfigurationFragment : Fragment() {
                 latestReport.networkCount
             )
         )
+    }
+
+    @Composable
+    private fun SsidStatistics() {
+        Column {
+            val ssids = viewModel.ssids.collectAsState(0)
+            val distinctSsids = viewModel.distinctSsids.collectAsState(0)
+            Text(stringResource(R.string.ssid_count, ssids.value))
+            Text(stringResource(R.string.distinct_ssid_count, distinctSsids.value))
+        }
     }
 
     private fun askToEnableLocation() {
