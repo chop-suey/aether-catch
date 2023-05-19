@@ -1,16 +1,21 @@
 package ch.woggle.aethercatch.service
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
 import android.util.Log
+import androidx.core.app.ActivityCompat
 import ch.woggle.aethercatch.AetherCatchApplication
 import ch.woggle.aethercatch.MainActivity
 import ch.woggle.aethercatch.R
@@ -37,6 +42,12 @@ class AetherCatchService : Service() {
 
     private var isLocationEnabled = false
 
+    private val wifiScanReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            captureNetworks()
+        }
+    }
+
     private companion object {
         const val SERVICE_FOREGROUND_NOTIFICATION_ID = 4711
         const val SERVICE_CAPTURE_THREAD_NAME = "AetherCatchCaptureThread"
@@ -52,6 +63,7 @@ class AetherCatchService : Service() {
         networkDao = database.getNetworkDao()
         captureReportDao = database.getCaptureReportDao()
         capturedNetworksDao = database.getCapturedNetworksDao()
+        registerScanReceiver()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -62,6 +74,7 @@ class AetherCatchService : Service() {
     }
 
     override fun onDestroy() {
+        unregisterReceiver(wifiScanReceiver)
         captureHandler.looper.quitSafely()
         super.onDestroy()
     }
@@ -75,7 +88,11 @@ class AetherCatchService : Service() {
             isLocationEnabled = !isLocationEnabled
             updateNotification()
         }
-        captureNetworks()
+        if (getWifiManager().startScan()) {
+            Log.i(TAG, "Scan started")
+        } else {
+            Log.w(TAG, "Failed to start scan")
+        }
         captureHandler.postDelayed({ runCaptureInterval() }, SERVICE_CAPTURE_INTERVAL_MILLIS)
     }
 
@@ -85,19 +102,29 @@ class AetherCatchService : Service() {
         notificationManager.notify(SERVICE_FOREGROUND_NOTIFICATION_ID, createServiceNotification())
     }
 
+    private fun registerScanReceiver() {
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
+        registerReceiver(wifiScanReceiver, intentFilter)
+    }
+
     private fun captureNetworks() {
         Log.i(TAG, "Capture networks")
-        CoroutineScope(Dispatchers.Default).launch {
-            val networks = getWifiManager().scanResults.map { Network.fromScanResult(it) }
-            persistNetworks(networks)
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            CoroutineScope(Dispatchers.Default).launch {
+                val networks = getWifiManager().scanResults.map { Network.fromScanResult(it) }
+                persistNetworks(networks)
+            }
         }
     }
 
     private suspend fun persistNetworks(networks: List<Network>) {
         val networkRowIds = networkDao.insertAll(networks)
-        val timestamp = createCaptureReport(networkRowIds).timestamp
-        val capturedNetworks = networks.map { CapturedNetworks(timestamp, it.ssid, it.bssid) }
-        capturedNetworksDao.insertAll(capturedNetworks)
+        val report = createCaptureReport(networkRowIds)
+        if (report.networkCount > 0) {
+            val capturedNetworks = networks.map { CapturedNetworks(report.timestamp, it.ssid, it.bssid) }
+            capturedNetworksDao.insertAll(capturedNetworks)
+        }
     }
 
     private suspend fun createCaptureReport(networkRowIds: List<Long>): CaptureReport {
