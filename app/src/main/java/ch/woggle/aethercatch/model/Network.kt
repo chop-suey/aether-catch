@@ -5,7 +5,7 @@ import androidx.room.Entity
 
 @Entity(
     tableName = "networks",
-    primaryKeys = arrayOf("ssid", "bssid")
+    primaryKeys = ["ssid", "bssid"]
 )
 data class Network(
     val ssid: String,

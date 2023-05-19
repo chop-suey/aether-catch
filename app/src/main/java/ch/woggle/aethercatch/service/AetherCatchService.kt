@@ -15,12 +15,15 @@ import ch.woggle.aethercatch.AetherCatchApplication
 import ch.woggle.aethercatch.MainActivity
 import ch.woggle.aethercatch.R
 import ch.woggle.aethercatch.dao.CaptureReportDao
+import ch.woggle.aethercatch.dao.CapturedNetworksDao
 import ch.woggle.aethercatch.dao.NetworkDao
 import ch.woggle.aethercatch.model.CaptureReport
+import ch.woggle.aethercatch.model.CapturedNetworks
 import ch.woggle.aethercatch.model.Network
 import ch.woggle.aethercatch.util.createDefaultNotificationChannelAndGetId
 import ch.woggle.aethercatch.util.isLocationEnabled
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 const val TAG = "AetherCatchService"
@@ -30,6 +33,7 @@ class AetherCatchService : Service() {
 
     private lateinit var networkDao: NetworkDao
     private lateinit var captureReportDao: CaptureReportDao
+    private lateinit var capturedNetworksDao: CapturedNetworksDao
 
     private var isLocationEnabled = false
 
@@ -47,6 +51,7 @@ class AetherCatchService : Service() {
         val database = (application as AetherCatchApplication).database
         networkDao = database.getNetworkDao()
         captureReportDao = database.getCaptureReportDao()
+        capturedNetworksDao = database.getCapturedNetworksDao()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -82,17 +87,25 @@ class AetherCatchService : Service() {
 
     private fun captureNetworks() {
         Log.i(TAG, "Capture networks")
-        GlobalScope.launch {
+        CoroutineScope(Dispatchers.Default).launch {
             val networks = getWifiManager().scanResults.map { Network.fromScanResult(it) }
-            val rowIds = networkDao.insertAll(networks)
-            createCaptureReport(rowIds)
+            persistNetworks(networks)
         }
     }
 
-    private suspend fun createCaptureReport(networkRowIds: List<Long>) {
+    private suspend fun persistNetworks(networks: List<Network>) {
+        val networkRowIds = networkDao.insertAll(networks)
+        val timestamp = createCaptureReport(networkRowIds).timestamp
+        val capturedNetworks = networks.map { CapturedNetworks(timestamp, it.ssid, it.bssid) }
+        capturedNetworksDao.insertAll(capturedNetworks)
+    }
+
+    private suspend fun createCaptureReport(networkRowIds: List<Long>): CaptureReport {
         val count = networkRowIds.filter { it != -1L }.size
         Log.i(TAG, "Captured $count new networks")
-        captureReportDao.insert(CaptureReport.forNetworkCount(count))
+        return CaptureReport.forNetworkCount(count).also {
+            captureReportDao.insert(it)
+        }
     }
 
     private fun createServiceNotification(): Notification {
