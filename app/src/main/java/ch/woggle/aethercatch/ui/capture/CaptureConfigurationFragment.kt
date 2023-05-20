@@ -54,6 +54,7 @@ class CaptureConfigurationFragment : Fragment() {
                         StopCapturingButton(hasLocationPermissionState)
                         LatestReportText()
                         SsidStatistics()
+                        Last24HoursStatistics()
                         ExportButton()
                     }
                 }
@@ -136,6 +137,18 @@ class CaptureConfigurationFragment : Fragment() {
             val distinctSsids = viewModel.distinctSsids.collectAsState(0)
             Text(stringResource(R.string.ssid_count, ssids.value))
             Text(stringResource(R.string.distinct_ssid_count, distinctSsids.value))
+        }
+    }
+
+    @Composable
+    private fun Last24HoursStatistics() {
+        Column {
+            val scans = viewModel.scans24h.collectAsState(0)
+            val successfulScans = viewModel.succesfulScans24h.collectAsState(0)
+            Text(stringResource(R.string.last_24_hours_successful_scans, scans.value, successfulScans.value))
+            val ssids = viewModel.ssids24h.collectAsState(0)
+            val distinctSsids = viewModel.distinctSsids24h.collectAsState(0)
+            Text(stringResource(R.string.last_24_hours_ssids, ssids.value, distinctSsids.value))
         }
     }
 

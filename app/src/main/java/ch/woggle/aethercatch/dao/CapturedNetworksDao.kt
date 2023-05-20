@@ -7,6 +7,7 @@ import androidx.room.Query
 import ch.woggle.aethercatch.model.CaptureReport
 import ch.woggle.aethercatch.model.CapturedNetworks
 import ch.woggle.aethercatch.model.Network
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CapturedNetworksDao {
@@ -17,6 +18,11 @@ interface CapturedNetworksDao {
             "JOIN capturedNetworks cn " +
             "ON r.timestamp = cn.timestamp AND cn.ssid = :ssid AND cn.bssid = :bssid")
     fun getReportsByNetwork(ssid: String, bssid: String): List<CaptureReport>
+
+    @Query("SELECT count(ssid) FROM capturedNetworks WHERE timestamp > ((strftime('%s', CURRENT_TIMESTAMP)  - 24 * 3600) * 1000)")
+    fun getSsidCountLast24h(): Flow<Int>
+    @Query("SELECT count(DISTINCT ssid) FROM capturedNetworks WHERE timestamp > ((strftime('%s', CURRENT_TIMESTAMP)  - 24 * 3600) * 1000)")
+    fun getDistinctSsidCountLast24h(): Flow<Int>
 
     @Query("SELECT n.* FROM networks n " +
             "JOIN capturedNetworks cn " +

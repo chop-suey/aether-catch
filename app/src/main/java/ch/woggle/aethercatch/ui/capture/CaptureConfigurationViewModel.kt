@@ -24,6 +24,11 @@ class CaptureConfigurationViewModel(application: Application) : AndroidViewModel
     val ssids = database.getNetworkDao().getSsidCount()
     val distinctSsids = database.getNetworkDao().getDistinctSsidCount()
 
+    val scans24h = database.getCaptureReportDao().getReportsCountLast24h()
+    val succesfulScans24h = database.getCaptureReportDao().getSuccessfulReportsCountLast24h()
+    val ssids24h = database.getCapturedNetworksDao().getSsidCountLast24h()
+    val distinctSsids24h = database.getCapturedNetworksDao().getDistinctSsidCountLast24h()
+
     val latestSuccessfulReport = MutableStateFlow(CaptureReport.EMPTY).also { flow ->
         viewModelScope.launch(Dispatchers.IO) {
             try {
